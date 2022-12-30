@@ -9,7 +9,7 @@
      (* 0.5 (+ (f (* delta start)) (f (* delta end))))))
 
 (defn integralSteps [f, steps, delta]
-  (loop [n steps, res 0]
+  (loop [n steps res 0]
     (if (= n 0) 0
       (if (= n 1)
         (+ res (areaWithDelta f 0 1 delta))
@@ -23,17 +23,12 @@
    (fn [x]
     (integrateTo f integralSteps x 1)))
 
-(defn memIntegralSteps []
-  (let [recurMemIntagrate (fn [recurFunc, res, f, steps, delta]
-   (if (= steps 1)
-     (+ res (areaWithDelta f 0 1 delta))
-      (recurFunc recurFunc (+ res (areaWithDelta f (- steps 1) steps delta)) f (- steps 1) delta)))]
-      (partial recurMemIntagrate (memoize recurMemIntagrate) 0)
-    ))
-
 (defn memIntegrate [f]
-  (fn [x]
-    (integrateTo f (memIntegralSteps) x 1)))
+  (let [recurMemIntagrate (fn [recurFunc end]
+    (if (<= end 0)
+      0
+      (+ (area f 0 (- end 1)) (recurFunc recurFunc (- end 1)))))]
+    (partial recurMemIntagrate (memoize recurMemIntagrate))))
 
 (let [simpleShiftIntregral (integrate simpleShift), sqrIntegral (integrate sqr),
       simpleShiftIntregralMem (memIntegrate simpleShift), sqrIntegralMem (memIntegrate sqr)]
@@ -50,3 +45,7 @@
 (time (sqrIntegralMem 100))
 (time (sqrIntegralMem 100))
 (println "====================THE END====================="))
+
+(let [f (fn [x] (Thread/sleep 10) x) f-integral (memIntegrate f)]
+  (time (f-integral 200))
+  (time (f-integral 200)))
